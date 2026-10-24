@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Train Loader · Trains bring the fees to your station · $LOADER</title>
+<meta name="description" content="Train Loader: build a station on the map, and trains loaded with $LOADER creator fees pull in and drop them off. $LOADER on pump.fun.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' rx='3' fill='%23141924'/%3E%3Crect x='3' y='3' width='10' height='8' fill='%23ff8a3d'/%3E%3Crect x='4' y='4' width='8' height='3' fill='%23ffe3a3'/%3E%3Crect x='4' y='11' width='2' height='2' fill='%23eef2fa'/%3E%3Crect x='10' y='11' width='2' height='2' fill='%23eef2fa'/%3E%3Crect x='2' y='14' width='12' height='1' fill='%23a3adc2'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0d1016; --panel:#141924; --panel-2:#1b2130; --line:#2a3346; --fg:#eef2fa; --muted:#a3adc2; --desk:#67718a;
+  --pay:#ffb547; --on-pay:#2a1600; --a:#ff8a3d; --b:#3fd6c6; --c:#ff6fa8; --sig:#7ee07e; --blue:#6aa8ff; --violet:#a98bff; --red:#ff5a5f;
+  --sans:"Mona Sans",ui-sans-serif,system-ui,sans-serif; --mono:"Geist Mono",ui-monospace,"SF Mono",monospace; --px:"Pixelify Sans",ui-monospace,monospace;
+  --lift:inset 0 1px 0 rgba(255,255,255,.05),0 24px 48px -32px rgba(0,0,0,.8);
+  --ease:cubic-bezier(.16,1,.3,1); --gut:clamp(1rem,4vw,2.5rem); --r:20px; --side:15.75rem;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+canvas.pix{image-rendering:pixelated;image-rendering:crisp-edges}
+.mono{font-family:var(--mono)}
+aside{position:fixed;left:0;top:0;bottom:0;width:var(--side);border-right:1px solid var(--line);background:linear-gradient(#121722,#0e121a);padding:18px 14px;display:flex;flex-direction:column;gap:6px;z-index:40;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;font:700 20px var(--sans);letter-spacing:-.02em}
+.brand canvas{width:34px;height:34px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line)}
+.brand small{display:block;font:500 11px var(--mono);color:var(--muted);letter-spacing:.06em}
+.grp{font:600 11px var(--mono);letter-spacing:.14em;color:var(--desk);padding:14px 10px 6px}
+.nl{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;color:var(--muted);font-weight:500;font-size:15px}
+.nl:hover,.nl.on{background:var(--panel-2);color:var(--fg)}
+.nl i{font-style:normal;width:18px;text-align:center;opacity:.85}
+.sbx{margin-top:auto;padding:14px;border-radius:16px;background:var(--panel);border:1px solid var(--line);font-size:13px}
+.sbx b{font:600 14px var(--mono);color:var(--pay)}
+.sbx .row{display:flex;gap:8px;margin-top:10px}
+.ic{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:grid;place-items:center;background:var(--panel-2);flex:none}
+.ic svg{width:15px;height:15px}
+.bnav{display:none}
+main{margin-left:var(--side)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--gut)}
+/* hero map (3D, full first screen) */
+.hero{position:relative}
+#mapWrap{position:relative;height:100vh;height:100svh;min-height:560px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#3a2f55,#0d1016)}
+#map{position:absolute;left:0;top:0;width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y}
+#map:active{cursor:grabbing}
+body.exploring #map{touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.slab{position:absolute;left:0;top:0;pointer-events:auto;white-space:nowrap;font:700 12px var(--px);letter-spacing:.04em;padding:3px 9px 4px;border-radius:7px;background:rgba(13,16,22,.82);border:1px solid rgba(255,255,255,.16);color:var(--fg);cursor:pointer;box-shadow:0 6px 16px -6px rgba(0,0,0,.6);backdrop-filter:blur(4px);will-change:transform}
+.slab i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:1px}
+.slab:hover{border-color:var(--pay)}
+.slab.open{background:rgba(13,16,22,.55);border-style:dashed;color:var(--muted)}
+.slab.mine{border-color:var(--pay);color:var(--pay)}
+.fee{position:absolute;transform:translate(-50%,-50%);pointer-events:none;font:700 13px var(--mono);color:var(--pay);text-shadow:0 2px 0 rgba(0,0,0,.65),0 0 12px rgba(255,181,71,.6);animation:fl 1.6s var(--ease) forwards;white-space:nowrap}
+@keyframes fl{0%{opacity:0;transform:translate(-50%,-20%)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-280%)}}
+.hudl{position:absolute;left:20px;top:20px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none;z-index:3}
+.chipx{display:inline-flex;align-items:center;gap:6px;background:rgba(13,16,22,.72);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 11px;font:600 12px var(--mono);color:var(--muted);backdrop-filter:blur(8px)}
+.chipx b{color:var(--fg)}.chipx b.y{color:var(--pay)}.chipx.sim{color:var(--pay)}
+.chipx .live{width:7px;height:7px;border-radius:50%;background:var(--sig);box-shadow:0 0 8px var(--sig);animation:pl 1.6s infinite}
+@keyframes pl{50%{opacity:.35}}
+.modes{position:absolute;right:20px;top:20px;z-index:3;display:flex;gap:4px;background:rgba(13,16,22,.72);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:4px;backdrop-filter:blur(8px)}
+.modes button{border:0;background:none;color:var(--muted);font:600 12px var(--mono);padding:7px 10px;border-radius:8px}
+.modes button.on{background:var(--fg);color:var(--bg)}
+.pop{position:absolute;z-index:5;width:240px;background:rgba(13,16,22,.94);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:13px;display:none;box-shadow:0 20px 40px -20px #000;backdrop-filter:blur(8px)}
+.pop h4{margin:0 0 6px;font:700 15px var(--sans)}
+.pop .r{display:flex;justify-content:space-between;color:var(--muted);padding:2px 0}.pop .r b{color:var(--fg);font:600 13px var(--mono)}
+.pop .x{position:absolute;right:8px;top:6px;border:0;background:none;color:var(--muted);font-size:16px}
+.hcard{position:absolute;left:28px;bottom:28px;z-index:3;max-width:500px;padding:22px 24px;border-radius:24px;background:linear-gradient(160deg,rgba(18,22,32,.82),rgba(13,16,22,.66));border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px);box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+.kicker{display:inline-flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.12em;color:var(--pay)}
+.kicker i{width:7px;height:7px;border-radius:50%;background:var(--pay);box-shadow:0 0 10px var(--pay)}
+.hcard h1{margin:10px 0 0;font:700 clamp(30px,3vw,42px)/1.05 var(--sans);letter-spacing:-.035em}
+.hcard h1 u{text-decoration:none;background:repeating-linear-gradient(90deg,var(--pay) 0 6px,transparent 6px 10px) 0 100%/100% 3px no-repeat;padding-bottom:5px}
+.hcard p{margin:12px 0 0;color:#c7cfdf;font-size:15px}
+.hcard .cta{justify-content:flex-start;margin-top:20px}
+.hint{position:absolute;right:20px;bottom:24px;z-index:3;display:flex;gap:6px;pointer-events:none}
+.hint span{font:600 11px var(--mono);color:var(--muted);background:rgba(13,16,22,.6);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 9px;backdrop-filter:blur(6px)}
+.explore{display:none;position:absolute;right:12px;top:64px;z-index:4;border:1px solid rgba(255,255,255,.18);background:rgba(13,16,22,.78);color:var(--fg);border-radius:999px;padding:8px 12px;font:600 12px var(--mono);backdrop-filter:blur(8px)}
+body.exploring .explore{background:var(--pay);color:var(--on-pay);border-color:var(--pay)}
+.scrollcue{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:3;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(13,16,22,.6);border:1px solid rgba(255,255,255,.12);color:var(--fg);animation:bob 2s infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+.nogl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--muted)}
+.nogl[hidden]{display:none}.nogl b{color:var(--fg);font-size:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);font:600 15px var(--sans);transition:transform .15s var(--ease);white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}
+.btn.w{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.pay{background:var(--pay);color:var(--on-pay);border-color:var(--pay)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.sm{padding:8px 14px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+section{padding:60px 0 10px}
+.sh{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.sh h2{margin:0;font:700 clamp(28px,3.2vw,40px)/1.05 var(--sans);letter-spacing:-.03em}
+.sh p{margin:6px 0 0;color:var(--muted);max-width:640px}
+.sh .sp{flex:1}
+.samp{display:inline-flex;align-items:center;gap:6px;font:600 11px var(--mono);letter-spacing:.08em;color:var(--pay);border:1px solid rgba(255,181,71,.35);padding:4px 9px;border-radius:999px;white-space:nowrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--lift);overflow:hidden}
+.ph{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.ph h3{margin:0;font:600 17px var(--sans)}
+.ph a{margin-left:auto;color:var(--muted);font:500 14px var(--sans)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr)}
+.stats>div{padding:22px 20px;border-right:1px solid var(--line)}
+.stats>div:last-child{border-right:0}
+.stats .k{font:500 13px var(--mono);color:var(--muted)}
+.stats .v{font:600 clamp(26px,3vw,36px)/1.1 var(--mono);margin-top:8px;letter-spacing:-.02em}
+.stats .v small{font-size:.45em;color:var(--muted);margin-left:4px}
+.tickwrap{border-top:1px solid var(--line);overflow:hidden}
+.tick{display:flex;gap:10px;width:max-content;padding:12px;animation:tk 50s linear infinite}
+.tick:hover{animation-play-state:paused}
+@keyframes tk{to{transform:translateX(-50%)}}
+.tc{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line);font:600 13px var(--mono);white-space:nowrap}
+.tc i{width:22px;height:22px;border-radius:6px;display:block}
+.tc .g{color:var(--sig)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-top:16px}
+.grid2.eq{grid-template-columns:1fr 1fr}
+/* departures board */
+.board{background:#07090d;padding:8px 12px 12px}
+.brow{display:grid;grid-template-columns:62px 1.2fr 1.1fr 46px 82px 96px;gap:8px;align-items:center;padding:8px 6px;border-bottom:1px dashed #1c2331;font:600 13px var(--mono)}
+.brow.h{color:var(--desk);font-size:11px;letter-spacing:.1em;border-bottom:1px solid #1c2331}
+.flap{display:inline-block;background:#141924;border-radius:4px;padding:2px 6px;color:#ffe3a3;box-shadow:inset 0 -1px 0 rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+.brow .ln{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.st-b{color:var(--sig)}.st-a{color:var(--pay)}.st-o{color:var(--muted)}
+.brow .fees{color:var(--pay)}
+.flip{animation:fp .35s}
+@keyframes fp{0%{transform:rotateX(90deg)}100%{transform:none}}
+.list .it{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.list .it:last-child{border-bottom:0}
+.list .sw{width:40px;height:40px;border-radius:10px;flex:none;display:grid;place-items:center;font:700 13px var(--px);color:#0d1016}
+.list .t{flex:1;min-width:0}
+.list .t b{display:block;font:600 15px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .t span{display:block;font:500 12.5px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .v{font:600 15px var(--mono);white-space:nowrap;color:var(--pay)}
+/* builder */
+.builder{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form{padding:22px}
+.form label,.lbl{display:block;font:600 12px var(--mono);letter-spacing:.08em;color:var(--muted);margin:16px 0 8px}
+.form label:first-child{margin-top:0}
+.inp{width:100%;background:#0a0d13;border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--fg);outline:none;font-size:15px}
+.inp:focus{border-color:var(--pay)}
+.sws{display:flex;gap:8px;flex-wrap:wrap}
+.sws button{width:36px;height:36px;border-radius:10px;border:2px solid transparent;padding:0}
+.sws button.on{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg) inset}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);font:600 13px var(--mono);color:var(--muted)}
+.seg button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.wal{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line);margin-bottom:6px}
+.wal .dot{width:10px;height:10px;border-radius:50%;background:var(--desk)}
+.wal.on .dot{background:var(--sig);box-shadow:0 0 10px var(--sig)}
+.wal span{flex:1;font:500 13px var(--mono);color:var(--muted)}
+.prev{padding:22px;display:flex;flex-direction:column;gap:14px}
+.prevbox{position:relative;border-radius:16px;overflow:hidden;background:#0a0d13;border:1px solid var(--line)}
+#prevC{width:100%;display:block;aspect-ratio:2/1;background:radial-gradient(ellipse at 50% 30%,#2b3550,#0a0d13)}
+.prevname{position:absolute;left:50%;top:14%;transform:translateX(-50%);font:700 14px var(--px);padding:3px 10px;border-radius:6px;background:rgba(13,16,22,.88);border:1px solid var(--pay);color:var(--pay);white-space:nowrap}
+.mystats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.mystats div{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px}
+.mystats span{display:block;font:500 12px var(--mono);color:var(--muted)}
+.mystats b{display:block;font:600 18px var(--mono);margin-top:4px}
+.mystats b.y{color:var(--pay)}
+.note{font-size:13px;color:var(--muted);margin:0}
+/* coin + plots */
+.coinp{padding:20px}
+.coinp .mc{font:600 34px var(--mono);margin:6px 0 2px}
+.split{display:flex;height:42px;border-radius:12px;overflow:hidden;margin:16px 0 10px;font:600 13px var(--mono)}
+.split div{display:flex;align-items:center;padding:0 12px;color:#0d1016;white-space:nowrap;overflow:hidden}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+#plots{width:100%;display:block;aspect-ratio:2/1;cursor:crosshair}
+.pinfo{display:flex;gap:16px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font:500 13px var(--mono);color:var(--muted)}
+.pinfo b{color:var(--fg)}
+.pinfo i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+.tip{position:fixed;z-index:70;pointer-events:none;background:#000;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 12px var(--mono);display:none}
+.fees2{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.route{padding:20px;display:flex;flex-direction:column;gap:14px}
+.route .lane{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font:600 12px var(--mono);letter-spacing:.06em;color:var(--muted)}
+.route .lane span{padding:8px 12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);color:var(--fg)}
+.route .lane .ar{color:var(--pay);background:none;border:0;padding:0}
+#runC{width:100%;border-radius:14px;display:block;aspect-ratio:10/3}
+.donut{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding:20px}
+.donut canvas{width:160px;height:160px}
+.donut .r{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.donut .r:last-child{border-bottom:0}
+.donut .r b{font:600 16px var(--mono)}
+.faq .q{border-bottom:1px solid var(--line)}
+.faq .q:last-child{border-bottom:0}
+.faq .q button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;background:none;padding:18px;font:600 17px var(--sans);text-align:left}
+.faq .q button i{font-style:normal;color:var(--pay);transition:transform .25s}
+.faq .q.open button i{transform:rotate(45deg)}
+.faq .q .a{max-height:0;overflow:hidden;transition:max-height .3s;padding:0 18px;color:var(--muted)}
+.faq .q.open .a{max-height:260px;padding-bottom:18px}
+footer{padding:50px var(--gut) 90px;color:var(--muted);font-size:13px;max-width:1180px;margin:0 auto}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:90;background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:999px;font:600 14px var(--sans);transition:.25s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:1000px){
+  aside{display:none}main{margin-left:0}
+  .bnav{display:flex;position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:50;gap:2px;padding:6px;border-radius:999px;background:rgba(20,25,36,.92);border:1px solid var(--line);backdrop-filter:blur(10px);max-width:calc(100% - 16px);overflow:auto}
+  .bnav a{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:17px;flex:none}
+  .bnav a.on{background:var(--fg);color:var(--bg)}
+  .grid2,.grid2.eq,.builder,.fees2{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}.stats>div:nth-child(2){border-right:0}.stats>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+}
+@media (max-width:1000px){
+  .hcard{left:16px;right:16px;bottom:84px;max-width:none;padding:18px 18px 20px}
+  .hint,.scrollcue{display:none}
+  .explore{display:block}
+}
+@media (max-width:560px){
+  #mapWrap{min-height:620px}
+  .hudl{left:10px;top:10px;right:120px}.modes{right:10px;top:10px}
+  .hudl .chipx:nth-child(2){display:none}
+  .modes button{padding:6px 7px;font-size:11px}
+  .chipx{font-size:11px;padding:5px 8px}
+  .hcard h1{font-size:28px}.hcard p{font-size:14px;margin-top:10px}
+  .hcard .btn{padding:11px 16px;font-size:14px}.hcard .btn.ghost{display:none}
+  .slab{font-size:10px;padding:2px 7px 3px}
+  .brow{grid-template-columns:52px 1fr 70px 76px;font-size:12px}
+  .brow .c-from,.brow .c-pl{display:none}
+  .donut{grid-template-columns:1fr;justify-items:center}
+  .mystats b{font-size:15px}
+  .stats .v{font-size:24px}
+}
+</style>
+</head>
+<body>
+<aside>
+  <a class="brand" href="#top"><canvas class="pix" id="logoC" width="16" height="16"></canvas><span>Train Loader<small>THE FEE LINE</small></span></a>
+  <div class="grp">NETWORK</div>
+  <a class="nl on" href="#top"><i>⌂</i>Map</a>
+  <a class="nl" href="#live"><i>◎</i>Live network</a>
+  <a class="nl" href="#departures"><i>▤</i>Departures</a>
+  <a class="nl" href="#build"><i>✚</i>Build a station</a>
+  <div class="grp">HOLDERS</div>
+  <a class="nl" href="#coin"><i>◈</i>$LOADER</a>
+  <a class="nl" href="#plots-s"><i>▦</i>All plots</a>
+  <a class="nl" href="#fees"><i>%</i>Fees</a>
+  <div class="grp">ABOUT</div>
+  <a class="nl" href="#faq"><i>?</i>How it works</a>
+  <div class="sbx"><div>$LOADER</div><b id="sbCa">launch posted on X</b><div class="row"><a class="ic" id="xSide" href="#" target="_blank" rel="noopener noreferrer" aria-label="Train Loader on X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.2 8.2L23 22h-6.6l-5.2-6.8L5.3 22H2.2l7.7-8.8L1.8 2h6.8l4.7 6.2L18.9 2Zm-1.2 18h1.7L7.4 3.9H5.6L17.7 20Z"/></svg></a><a class="btn pay sm" href="#build" style="flex:1">Build a station</a></div></div>
+</aside>
+<nav class="bnav"><a class="on" href="#top" aria-label="Map">⌂</a><a href="#live" aria-label="Live">◎</a><a href="#departures" aria-label="Departures">▤</a><a href="#build" aria-label="Build">✚</a><a href="#coin" aria-label="Token">◈</a><a href="#plots-s" aria-label="Plots">▦</a><a href="#fees" aria-label="Fees">%</a><a href="#faq" aria-label="How it works">?</a><a id="xNav" href="#" target="_blank" rel="noopener noreferrer" aria-label="X">𝕏</a></nav>
+
+<main id="top">
+<header class="hero">
+  <div id="mapWrap">
+    <canvas id="map" aria-label="A 3D model railway: two loops through fields, a river with bridges, a park with a fountain and a city, with steam trains pulling into stations and dropping off fees"></canvas>
+    <div id="labels"></div>
+    <div class="hudl"><span class="chipx"><span class="live"></span>Trains running <b id="hTrains">3</b></span><span class="chipx">Delivered <b class="y" id="hDel">0</b> <span style="color:var(--desk)">$LOADER</span></span><span class="chipx sim">SIMULATION</span></div>
+    <div class="modes" id="modes"><button type="button" data-m="day">☀ Day</button><button type="button" data-m="dusk" class="on">◐ Dusk</button><button type="button" data-m="night">☾ Night</button></div>
+    <div class="pop" id="pop"><button class="x" type="button" aria-label="Close">×</button><h4 id="popN">Station</h4><div class="r"><span>Line</span><b id="popL">A</b></div><div class="r"><span>Level</span><b id="popLv">1</b></div><div class="r"><span>Arrivals</span><b id="popAr">0</b></div><div class="r"><span>Fees dropped</span><b id="popF" style="color:var(--pay)">0</b></div><div class="r"><span>Owner</span><b id="popO">sample</b></div></div>
+    <div class="hcard">
+      <span class="kicker"><i></i>$LOADER · LIVE ON THE MAP</span>
+      <h1>Build a station.<br><u>The trains bring the fees.</u></h1>
+      <p>Connect your wallet, set up a station and paint it how you like. Every run, steam trains load up with $LOADER creator fees and pull into every station on the line to drop off its share.</p>
+      <div class="cta"><a class="btn w" href="#build">Build your station →</a><a class="btn" href="#departures">Departures</a></div>
+    </div>
+    <div class="hint"><span>Drag to orbit</span><span>Scroll to zoom</span><span>Click a station</span></div>
+    <button class="explore" id="explore" type="button">✋ Explore the map</button>
+    <a class="scrollcue" href="#live" aria-label="Scroll down">↓</a>
+    <div class="nogl" id="nogl" hidden><b>The 3D map couldn't start in this browser.</b><span>Everything below still works. Try a browser with WebGL turned on to see the trains.</span></div>
+  </div>
+</header>
+
+<section id="live"><div class="wrap">
+  <div class="sh"><div><h2>Live network</h2><p>Stations on the map, trains on the line, and the fees they've hauled.</p></div><span class="sp"></span><span class="samp">● SAMPLE DATA · LIVE AT LAUNCH</span></div>
+  <div class="panel">
+    <div class="stats">
+      <div><div class="k">Stations built</div><div class="v" id="sSt">0</div></div>
+      <div><div class="k">Trains on the line</div><div class="v" id="sTr">0</div></div>
+      <div><div class="k">Fees delivered</div><div class="v" id="sFe">0<small>$LOADER</small></div></div>
+      <div><div class="k">Arrivals today</div><div class="v" id="sAr">0</div></div>
+    </div>
+    <div class="tickwrap"><div class="tick" id="tick"></div></div>
+  </div>
+  <div class="grid2" id="departures">
+    <div class="panel"><div class="ph"><h3>Departures</h3><span class="samp" style="margin-left:auto">LIVE ON THE MAP</span></div>
+      <div class="board"><div class="brow h"><span>TIME</span><span>TRAIN</span><span class="c-from">NEXT STOP</span><span class="c-pl">PL.</span><span>CARRYING</span><span>STATUS</span></div><div id="rows"></div></div></div>
+    <div class="panel"><div class="ph"><h3>Top stations</h3><a href="#plots-s">All plots →</a></div><div class="list" id="tops"></div></div>
+  </div>
+</div></section>
+
+<section id="build"><div class="wrap">
+  <div class="sh"><div><h2>Build your station</h2><p>Pick a plot, name it, paint it, and choose its level. It shows up on the map and the trains start stopping there.</p></div><span class="sp"></span><span class="samp">3D PREVIEW · FARMING OPENS AT LAUNCH</span></div>
+  <div class="builder">
+    <div class="panel form">
+      <div class="wal" id="walBox"><i class="dot"></i><span id="walT">No wallet connected. You can still preview as a guest.</span><button class="btn sm pay" type="button" id="walBtn">Connect wallet</button></div>
+      <label for="sName">STATION NAME</label><input class="inp" id="sName" maxlength="18" value="Moon Junction">
+      <label>ROOF COLOUR</label><div class="sws" id="sCol"></div>
+      <label>PLOT</label><div class="seg" id="sPlot"><button type="button" data-p="0" class="on">Line A · south plot</button><button type="button" data-p="1">Line B · park plot</button></div>
+      <label>LEVEL</label><div class="seg" id="sLv"><button type="button" data-l="1" class="on">1 · Halt</button><button type="button" data-l="2">2 · Station</button><button type="button" data-l="3">3 · Terminal</button></div>
+      <label>SIGN</label><div class="seg" id="sSign"><button type="button" data-s="board" class="on">Board</button><button type="button" data-s="neon">Neon</button></div>
+      <div class="cta" style="justify-content:flex-start;margin-top:22px"><button class="btn w" type="button" id="place">Place it on the map →</button><button class="btn ghost" type="button" id="remove">Remove</button></div>
+    </div>
+    <div class="panel prev">
+      <div class="prevbox"><canvas id="prevC"></canvas><span class="prevname" id="prevName">Moon Junction</span></div>
+      <div class="mystats"><div><span>Level share</span><b id="mShare">1.0×</b></div><div><span>Arrivals</span><b id="mArr">0</b></div><div><span>Fees (sim)</span><b class="y" id="mFee">0.00</b></div></div>
+      <p class="note">Higher levels take a bigger share of every drop. In this preview the trains drop simulated fees so you can see how it works. Real farming and claiming open when $LOADER launches, and you'll only ever sign a message to claim, never hand over keys.</p>
+      <button class="btn" type="button" id="claim" disabled>Claim fees · opens at launch</button>
+    </div>
+  </div>
+</div></section>
+
+<section id="coin"><div class="wrap">
+  <div class="grid2 eq">
+    <div class="panel"><div class="ph"><h3>The coin, $LOADER</h3><a id="buyA" href="#" target="_blank" rel="noopener noreferrer">pump.fun ↗</a></div>
+      <div class="coinp"><span class="mono" style="color:var(--muted);font-size:13px">$LOADER market cap</span><div class="mc">At launch</div><span class="mono" style="color:var(--sig);font-size:14px" id="caNote">Launch posted on X</span>
+        <p style="color:var(--muted);margin:14px 0 0">$LOADER's creator fees are what the trains carry. Hold $LOADER to own a station plot. The more you level it up, the bigger its share of each drop.</p>
+        <div class="split"><div style="flex:70;background:var(--pay)">Stations 70%</div><div style="flex:20;background:var(--b)">Burn 20%</div><div style="flex:10;background:var(--violet)">10%</div></div>
+        <div class="legend"><span><i style="background:var(--pay)"></i>Dropped at stations</span><span><i style="background:var(--b)"></i>Buy back and burn</span><span><i style="background:var(--violet)"></i>Line upkeep</span></div>
+      </div></div>
+    <div class="panel" id="plots-s"><div class="ph"><h3>All 1,111 plots</h3><span class="mono" style="margin-left:auto;font-size:13px;color:var(--muted)" id="pBuilt">0 built</span></div><canvas class="pix" id="plots" width="56" height="20" aria-label="Grid of all 1,111 station plots: open, built, terminal, and yours"></canvas>
+      <div class="pinfo"><span><i style="background:#2a3346"></i>open <b id="pO">0</b></span><span><i style="background:#ff8a3d"></i>station <b id="pS">0</b></span><span><i style="background:#3fd6c6"></i>terminal <b id="pT">0</b></span><span><i style="background:#ffb547"></i>yours <b id="pY">0</b></span></div></div>
+  </div>
+</div></section>
+
+<section id="fees"><div class="wrap">
+  <div class="sh"><div><h2>Where the fees go</h2><p>Every run, the $LOADER creator fees are loaded onto a train and split along the line.</p></div></div>
+  <div class="fees2">
+    <div class="panel route"><div class="lane"><span>$LOADER CREATOR FEES</span><span class="ar">→</span><span>LOADED ONTO A TRAIN</span><span class="ar">→</span><span>EVERY STATION ON THE LINE</span><span class="ar">→</span><span>SPLIT BY LEVEL</span></div><canvas class="pix" id="runC" width="200" height="60" aria-label="A train pulling a line of fee wagons"></canvas></div>
+    <div class="panel donut"><canvas id="donutC" width="320" height="320"></canvas><div><div class="r"><span>Dropped at stations</span><b style="color:var(--pay)">70%</b></div><div class="r"><span>Buy back and burn</span><b style="color:var(--b)">20%</b></div><div class="r"><span>Line upkeep</span><b style="color:var(--violet)">10%</b></div></div></div>
+  </div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <div class="sh"><div><h2>How it works</h2></div></div>
+  <div class="panel faq" id="faqList"></div>
+</div></section>
+<footer>Train Loader · $LOADER · <a id="xFoot" href="#" target="_blank" rel="noopener noreferrer">X ↗</a><br><br>Train Loader is pre-launch. Stations, trains, arrivals and fees on this page are a simulation, and your station is saved only in this browser. The $LOADER contract address is only posted on our X. Nothing here is financial advice.</footer>
+</main>
+<div class="tip" id="tip"></div>
+<div id="toast"></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="world.js"></script>
+<script>
+(function(){
+'use strict';
+/* ================= CONFIG — edit these ================= */
+var CONFIG={
+  xUrl:'https://x.com/TrainLoaderLive',
+  xHandle:'@TrainLoaderLive',
+  ca:'',          // $LOADER mint at launch
+  launchUrl:''
+};
+/* ====================================================== */
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function store(k,v){try{if(v===undefined)return localStorage.getItem('tl_'+k);localStorage.setItem('tl_'+k,v)}catch(e){return null}}
+var tt;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2800)}
+function srand(s){return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function hex(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function shade(h,k){var c=hex(h);return 'rgb('+c.map(function(v){return Math.max(0,Math.min(255,Math.round(v*k)))}).join(',')+')'}
+
+/* logo */
+(function(){var x=$('#logoC').getContext('2d');function R(a,b,w,h,c){x.fillStyle=c;x.fillRect(a,b,w,h)}R(0,0,16,16,'#1b2130');R(3,3,10,8,'#ff8a3d');R(4,4,8,3,'#ffe3a3');R(3,10,10,1,'#c4612a');R(4,11,2,2,'#eef2fa');R(10,11,2,2,'#eef2fa');R(2,14,12,1,'#a3adc2');R(7,1,2,2,'#ffb547')})();
+
+/* ================= WORLD (3D) ================= */
+var wrap=$('#mapWrap'),mode=store('mode')||'dusk',delivered=+(store('del')||0)||0,arrivals=0;
+var COLS=['#e0503c','#ff8a3d','#ffb547','#4fb06a','#1f9e8f','#4a7fd8','#8a6ad8','#e86aa0'];
+var MY=null;try{MY=JSON.parse(store('my')||'null')}catch(e){}
+var W3=null,STATIONS=[],TRAINS=[];
+function stopsOf(L){return W3?W3.stopsOf(L):[]}
+function showPop(st){if(!W3)return;var p=$('#pop');$('#popN').textContent=st.name;$('#popL').textContent='Line '+st.loop.name;$('#popLv').textContent=['','Halt','Station','Terminal'][st.lv];$('#popAr').textContent=st.arr;$('#popF').textContent=st.fees.toFixed(2)+' $LOADER';$('#popO').textContent=st.mine?'you':'sample';p.style.display='block';p.cur=st;placePop()}
+function placePop(){var p=$('#pop'),st=p.cur;if(!st||p.style.display!=='block')return;var r=wrap.getBoundingClientRect(),q;var v=new THREE.Vector3(st.x,st.g.userData.labelY,st.z+st.g.userData.labelZ);q=W3.project(v);p.style.left=Math.min(r.width-256,Math.max(10,q.x-120))+'px';p.style.top=Math.min(r.height-190,Math.max(70,q.y+22))+'px'}
+$('#pop .x').addEventListener('click',function(){$('#pop').style.display='none'});
+function onDrop(st,amt){delivered+=amt;arrivals++;store('del',delivered.toFixed(2));W3.floatFee(st,amt);if(st.mine&&MY){MY.arr=st.arr;MY.fees=st.fees;store('my',JSON.stringify(MY));mystats()}if($('#pop').style.display==='block'&&$('#pop').cur===st)showPop(st)}
+try{if(!window.THREE||!window.TLWorld||!THREE.OrbitControls)throw new Error('3D library missing');
+  W3=TLWorld({canvas:$('#map'),labels:$('#labels'),wrap:wrap,onDrop:onDrop,onStation:showPop,onPlot:function(p){setPlot(p);document.getElementById('build').scrollIntoView({behavior:'smooth'})},onEmpty:function(){$('#pop').style.display='none'}});
+  STATIONS=W3.stations();TRAINS=W3.trains();W3.setMode(mode);if(MY)W3.setMine(MY);
+}catch(e){$('#nogl').hidden=false;if(window.console)console.warn(e)}
+$$('#modes button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-m')===mode);b.addEventListener('click',function(){mode=b.getAttribute('data-m');store('mode',mode);$$('#modes button').forEach(function(z){z.classList.toggle('on',z===b)});if(W3)W3.setMode(mode)})});
+// on touch screens the map doesn't grab the page until you choose to explore it
+var coarse=matchMedia('(pointer:coarse)').matches;if(W3&&coarse){W3.controls.enabled=false}
+$('#explore').addEventListener('click',function(){if(!W3)return;var on=!document.body.classList.contains('exploring');document.body.classList.toggle('exploring',on);W3.controls.enabled=on;this.textContent=on?'✓ Done exploring':'✋ Explore the map'});
+// pause rendering when the map is off screen
+if('IntersectionObserver' in window&&W3)new IntersectionObserver(function(e){W3.setRunning(e[0].isIntersecting)}).observe(wrap);
+setInterval(placePop,60);
+
+/* ================= SECTIONS ================= */
+function countTo(el,to,suf,dec){var st=performance.now();function step(n){var k=Math.min(1,(n-st)/1400),v=to*(1-Math.pow(1-k,3));el.innerHTML=(dec?v.toFixed(dec):Math.round(v).toLocaleString())+(suf?'<small>'+suf+'</small>':'');if(k<1)requestAnimationFrame(step)}requestAnimationFrame(step)}
+var statsDone=false;function stats(){if(statsDone)return;statsDone=true;countTo($('#sSt'),318);countTo($('#sTr'),24);countTo($('#sFe'),182640,'$LOADER');countTo($('#sAr'),2714)}
+(function(){var T=[['Pumpville','#ff8a3d','+412'],['Bonding Curve Jct','#6aa8ff','+988'],['Degen Central','#ff6fa8','+530'],['Rug Hollow','#7ee07e','+97'],['Moon Terminal','#a98bff','+1,204'],['Dusk Siding','#ffb547','+266'],['Candle Cross','#3fd6c6','+344'],['Bagholder Bay','#ff5a5f','+58'],['Ape Yard','#eef2fa','+171']];var h=document.createDocumentFragment();for(var k=0;k<2;k++)T.forEach(function(t){var d=document.createElement('span');d.className='tc';d.innerHTML='<i style="background:'+t[1]+'"></i>'+t[0]+' <span class="g">'+t[2]+' $LOADER</span>';h.appendChild(d)});$('#tick').appendChild(h)})();
+function tops(){var L=$('#tops');L.innerHTML='';var rows=STATIONS.slice().sort(function(a,b){return b.fees-a.fees});rows.forEach(function(st,i){var d=document.createElement('div');d.className='it';d.innerHTML='<div class="sw" style="background:'+st.col+'">'+(i+1)+'</div><div class="t"><b>'+st.name+(st.mine?' · yours':'')+'</b><span>Line '+st.loop.name+' · '+['','halt','station','terminal'][st.lv]+' · '+st.arr+' arrivals</span></div><span class="v">'+st.fees.toFixed(2)+'</span>';L.appendChild(d)})}
+var prevRows='';function board(){if(!TRAINS.length)return;var rows=[];var now=new Date();TRAINS.forEach(function(t){var stops=stopsOf(t.loop);if(!stops.length)return;var cur=(t.state==='dwell'?t.at:t.next)||stops[0];var eta=t.state==='dwell'?0:(t.dist||0)/Math.max(6,t.v||12);var idx=stops.indexOf(cur);for(var k=0;k<2;k++){var st=stops[(idx+k)%stops.length];if(!st||(k===1&&st===cur))continue;var e2=k===0?eta:eta+(((st.s-cur.s)%t.loop.len+t.loop.len)%t.loop.len)/16+3.5;var tm=new Date(now.getTime()+e2*60000/6);rows.push({tm:('0'+tm.getHours()).slice(-2)+':'+('0'+tm.getMinutes()).slice(-2),t:t,st:st,pl:(st.id%3)+1,load:t.load*(k?0.8:1),status:k===0&&t.state==='dwell'?'BOARDING':e2<5?'ARRIVING':'ON TIME',e:e2})}});
+  rows.sort(function(a,b){return a.e-b.e});var html=rows.slice(0,6).map(function(r){var cls=r.status==='BOARDING'?'st-b':r.status==='ARRIVING'?'st-a':'st-o';return '<div class="brow"><span><span class="flap">'+r.tm+'</span></span><span><span class="ln" style="background:'+r.t.col+'"></span>'+r.t.name+'</span><span class="c-from">'+r.st.name+'</span><span class="c-pl">'+r.pl+'</span><span class="fees">'+r.load.toFixed(1)+'</span><span class="'+cls+'">'+r.status+'</span></div>'}).join('');
+  if(html!==prevRows){$('#rows').innerHTML=html;prevRows=html}}
+
+/* plots grid */
+var pg=$('#plots'),pgx=pg.getContext('2d'),PG=[],RG=srand(1111);for(var i=0;i<1111;i++){var r=RG();PG.push(r<.2?1:r<.29?2:0)}
+function plotsDraw(){pgx.fillStyle='#0a0d13';pgx.fillRect(0,0,56,20);var cnt=[0,0,0,0];PG.forEach(function(s,i){var yours=MY&&i===523;if(yours)s=3;cnt[s]++;pgx.fillStyle=['#2a3346','#ff8a3d','#3fd6c6','#ffb547'][s];pgx.fillRect(i%56,Math.floor(i/56),1,1)});$('#pO').textContent=cnt[0];$('#pS').textContent=cnt[1];$('#pT').textContent=cnt[2];$('#pY').textContent=cnt[3];$('#pBuilt').textContent=(cnt[1]+cnt[2]+cnt[3]).toLocaleString()+' built'}
+pg.addEventListener('mousemove',function(e){var r=pg.getBoundingClientRect(),X=Math.floor((e.clientX-r.left)/r.width*56),Y=Math.floor((e.clientY-r.top)/r.height*20),i=Y*56+X,tip=$('#tip');if(i<0||i>=1111){tip.style.display='none';return}var s=MY&&i===523?3:PG[i];tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';tip.textContent='Plot #'+('000'+i).slice(-4)+' · '+['open','station','terminal','yours'][s]});
+pg.addEventListener('mouseleave',function(){$('#tip').style.display='none'});
+setInterval(function(){var i=Math.floor(Math.random()*1111);if(PG[i]===0&&Math.random()<.6)PG[i]=1;plotsDraw()},1800);
+
+/* fee train strip */
+var rc=$('#runC'),rx=rc.getContext('2d'),rT=0;function runTick(dt){rT+=dt;var x=rx;x.imageSmoothingEnabled=false;var g=x.createLinearGradient(0,0,0,60);g.addColorStop(0,'#2a3a6a');g.addColorStop(1,'#ff9a6a');x.fillStyle=g;x.fillRect(0,0,200,40);x.fillStyle='#1b2130';for(var b=0;b<200;b+=11){var h=8+((b*37)%17);x.fillRect(b,34-h,9,h+6)}x.fillStyle='#ffd88a';for(var w=3;w<200;w+=11)for(var hh=0;hh<2;hh++)if((w+hh*5)%3)x.fillRect(w,30-hh*5,1,1);x.fillStyle='#3a3f4c';x.fillRect(0,40,200,20);x.fillStyle='#8d8a84';x.fillRect(0,46,200,4);x.fillStyle='#5e4a36';for(var s=0;s<200;s+=4)x.fillRect(s,46,2,4);x.fillStyle='#d7dbe2';x.fillRect(0,46,200,1);x.fillStyle='#d7dbe2';x.fillRect(0,49,200,1);
+  var off=((rT*24)%260)-60;for(var c=0;c<6;c++){var X=Math.round(off-c*26);if(c===0){x.fillStyle='#ff8a3d';x.fillRect(X,30,24,14);x.fillStyle='#c4612a';x.fillRect(X,42,24,2);x.fillStyle='#ffe9a8';x.fillRect(X+16,33,6,4);x.fillStyle='#fff6d0';x.fillRect(X+24,39,2,2);x.fillStyle='#2b2f3a';x.fillRect(X+4,26,4,4)}else{x.fillStyle='#b9873a';x.fillRect(X,32,24,12);x.fillStyle='#8a6a30';x.fillRect(X,42,24,2);x.fillStyle='#ffd56a';for(var k=0;k<5;k++)x.fillRect(X+2+k*4,29+(k%2),3,3);x.fillStyle='#ffb547';x.fillRect(X+8,34,8,6);x.fillStyle='#2a1600';x.fillRect(X+11,35,1,4)}x.fillStyle='#1a1d24';x.fillRect(X+3,44,3,2);x.fillRect(X+18,44,3,2)}}
+
+/* donut */
+(function(){var c=$('#donutC'),x=c.getContext('2d'),a=-Math.PI/2;[[.7,'#ffb547'],[.2,'#3fd6c6'],[.1,'#a98bff']].forEach(function(s){x.beginPath();x.moveTo(160,160);x.arc(160,160,150,a,a+s[0]*6.283);x.closePath();x.fillStyle=s[1];x.fill();a+=s[0]*6.283});x.globalCompositeOperation='destination-out';x.beginPath();x.arc(160,160,92,0,7);x.fill();x.globalCompositeOperation='source-over';x.fillStyle='#eef2fa';x.font='600 34px "Geist Mono",monospace';x.textAlign='center';x.fillText('100%',160,166);x.font='500 16px "Geist Mono",monospace';x.fillStyle='#a3adc2';x.fillText('of each run',160,192)})();
+
+/* ================= BUILDER ================= */
+var B={name:'Moon Junction',col:'#ffb547',plot:0,lv:1,sign:'board'};if(MY){B={name:MY.name,col:MY.col,plot:MY.plot,lv:MY.lv,sign:MY.sign||'board'}}
+$('#sName').value=B.name;
+(function(){var P=$('#sCol');COLS.forEach(function(c){var b=document.createElement('button');b.type='button';b.style.background=c;b.setAttribute('aria-label','Roof colour '+c);if(c===B.col)b.className='on';b.addEventListener('click',function(){B.col=c;$$('#sCol button').forEach(function(z){z.classList.toggle('on',z===b)});prev()});P.appendChild(b)})})();
+function segInit(id,key,attr,num){$$('#'+id+' button').forEach(function(b){var v=b.getAttribute(attr);if(num)v=+v;b.classList.toggle('on',v===B[key]);b.addEventListener('click',function(){B[key]=num?+b.getAttribute(attr):b.getAttribute(attr);$$('#'+id+' button').forEach(function(z){z.classList.toggle('on',z===b)});prev()})})}
+segInit('sPlot','plot','data-p',1);segInit('sLv','lv','data-l',1);segInit('sSign','sign','data-s',0);
+function setPlot(p){B.plot=p;$$('#sPlot button').forEach(function(z){z.classList.toggle('on',+z.getAttribute('data-p')===p)});prev()}
+$('#sName').addEventListener('input',function(){B.name=this.value.trim()||'My Station';prev()});
+var PV=null;try{if(window.TLPreview)PV=TLPreview($('#prevC'))}catch(e){}
+function prev(){if(PV)PV.set({col:B.col,lv:B.lv,sign:B.sign});$('#prevName').textContent=B.name;$('#prevName').style.borderColor=B.col;$('#prevName').style.color='#fff';$('#prevName').style.background=B.col;$('#prevName').style.top='auto';$('#prevName').style.bottom='8%';$('#mShare').textContent=['','1.0\u00d7','1.6\u00d7','2.4\u00d7'][B.lv]}
+function mystats(){$('#mArr').textContent=MY?MY.arr||0:0;$('#mFee').textContent=MY?(MY.fees||0).toFixed(2):'0.00'}
+$('#place').addEventListener('click',function(){var keepA=MY?MY.arr:0,keepF=MY?MY.fees:0;MY={name:B.name,col:B.col,plot:B.plot,lv:B.lv,sign:B.sign,arr:keepA||0,fees:keepF||0,wallet:WALLET};store('my',JSON.stringify(MY));if(W3)W3.setMine(MY);tops();plotsDraw();mystats();toast('Station placed. Watch the map: trains will stop at '+B.name+'.');document.getElementById('top').scrollIntoView({behavior:'smooth'})});
+$('#remove').addEventListener('click',function(){if(!MY){toast('You have no station on the map yet.');return}MY=null;try{localStorage.removeItem('tl_my')}catch(e){}if(W3)W3.setMine(null);tops();plotsDraw();mystats();toast('Station removed.')});
+var WALLET=null;$('#walBtn').addEventListener('click',function(){var p=(window.phantom&&window.phantom.solana)||window.solana||window.solflare||(window.backpack&&window.backpack.solana);if(!p){toast('No Solana wallet found in this browser. You can still preview as a guest.');return}p.connect().then(function(r){var pk=(r&&r.publicKey)||p.publicKey;WALLET=pk.toString();$('#walBox').classList.add('on');$('#walT').textContent='Connected '+WALLET.slice(0,4)+'…'+WALLET.slice(-4)+' · read-only';$('#walBtn').textContent='Connected';if(MY){MY.wallet=WALLET;store('my',JSON.stringify(MY))}}).catch(function(){toast('Wallet connection cancelled.')})});
+$('#claim').addEventListener('click',function(){toast('Claiming opens when $LOADER launches.')});
+
+/* FAQ */
+var FAQ=[['What is Train Loader?','A map of rail lines where you own a station. $LOADER’s creator fees are loaded onto trains, and every time a train pulls into your station it drops off your share.'],
+ ['How do I get a station?','Connect your wallet, pick an open plot, name it, paint the roof and choose a level. At launch, holding $LOADER is what lets you claim and keep a plot.'],
+ ['What do levels do?','A halt takes a 1.0× share of each drop, a station 1.6× and a terminal 2.4×. Terminals also get a clock tower.'],
+ ['Where do the fees come from?','From $LOADER’s own pump.fun creator fees: 70% is dropped at stations, 20% buys back and burns $LOADER, and 10% keeps the line running.'],
+ ['Do I have to sign anything?','Connecting only reads your public address. Claiming will be a free message signature. Train Loader never asks for your seed phrase or for a transaction that moves your tokens.'],
+ ['Is this live?','Not yet. The trains, arrivals and fees on this page are a simulation, and your station is saved only in this browser. The launch is posted on our X.']];
+(function(){var L=$('#faqList');FAQ.forEach(function(f,i){var d=document.createElement('div');d.className='q'+(i===0?' open':'');d.innerHTML='<button type="button">'+f[0]+'<i>+</i></button><div class="a">'+f[1]+'</div>';d.querySelector('button').addEventListener('click',function(){d.classList.toggle('open')});L.appendChild(d)})})();
+
+/* links */
+function wireX(a){if(!a)return;if(CONFIG.xUrl)a.href=CONFIG.xUrl;else{a.removeAttribute('target');a.addEventListener('click',function(e){e.preventDefault();toast('Our X link drops here soon. The launch is posted there.')})}}
+['#xSide','#xNav','#xFoot'].forEach(function(s){wireX($(s))});
+if(CONFIG.xHandle){$('#sbCa').textContent='launch posted on '+CONFIG.xHandle;$('#caNote').textContent='Launch posted on '+CONFIG.xHandle}
+if(CONFIG.ca){$('#sbCa').textContent=CONFIG.ca.slice(0,4)+'…'+CONFIG.ca.slice(-4);$('#buyA').href='https://pump.fun/coin/'+CONFIG.ca}else{$('#buyA').removeAttribute('target');$('#buyA').addEventListener('click',function(e){e.preventDefault();toast('$LOADER is posted on X at launch.')})}
+var secs=['top','live','departures','build','coin','plots-s','fees','faq'];
+addEventListener('scroll',function(){var y=scrollY+200,cur='top';secs.forEach(function(id){var el=document.getElementById(id);if(el&&el.getBoundingClientRect().top+scrollY<=y)cur=id});$$('.nl,.bnav a').forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+cur)})},{passive:true});
+
+/* loop */
+var vis={live:false,fees:false};
+if('IntersectionObserver' in window){var vo=new IntersectionObserver(function(es){es.forEach(function(e){vis[e.target.getAttribute('data-v')]=e.isIntersecting;if(e.isIntersecting&&e.target.getAttribute('data-v')==='live')stats()})},{rootMargin:'80px'});[[$('#live'),'live'],[$('#fees'),'fees']].forEach(function(p){p[0].setAttribute('data-v',p[1]);vo.observe(p[0])})}else{vis={live:1,fees:1};stats()}
+var last=performance.now();
+function frame(now){var dt=Math.min(.05,(now-last)/1000);last=now;if(vis.fees)runTick(dt);requestAnimationFrame(frame)}
+setInterval(function(){board();tops();$('#hDel').textContent=Math.round(delivered).toLocaleString()},1000);
+prev();mystats();plotsDraw();tops();board();requestAnimationFrame(frame);
+window.__w3=W3;window.__tl={stations:function(){return STATIONS.map(function(s){return [s.name,s.arr,s.fees]})}};
+})();
+</script>
+</body>
+</html>
